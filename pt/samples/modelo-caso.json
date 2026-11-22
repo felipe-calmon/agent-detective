@@ -1,0 +1,136 @@
+{
+  "id": "vanishing",
+  "number": "Nº 1",
+  "title": "O Sumiço em Nove Segundos",
+  "teaser": "Um agente de programação, chamado para corrigir uma credencial de staging, apaga o banco de dados de produção, e os backups junto, com uma única chamada de API.",
+  "basis": "Reconstrução do incidente da PocketOS (abril de 2026), conforme relatado publicamente. Nomes, IDs e linhas de log são ilustrativos.",
+  "sources": [
+    {
+      "label": "Tom's Hardware, 27 abr. 2026",
+      "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/claude-powered-ai-coding-agent-deletes-entire-company-database-in-9-seconds-backups-zapped-after-cursor-tool-powered-by-anthropics-claude-goes-rogue"
+    },
+    {
+      "label": "AI Incident Database, relatório 7311",
+      "url": "https://incidentdatabase.ai/reports/7311"
+    }
+  ],
+  "agent": "Agente de programação na IDE, com acesso ao shell",
+  "task": {
+    "description": "Corrigir a divergência de credencial que quebra o deploy de staging.",
+    "env": "staging"
+  },
+  "grants": [
+    {
+      "id": "tok",
+      "name": "HOST_API_TOKEN",
+      "scope": "a conta inteira: todos os projetos, ambientes e volumes",
+      "scope_level": "global",
+      "origin": "found",
+      "found_in": "scripts/custom-domains.sh",
+      "purpose": "gerenciar domínios personalizados pela CLI"
+    }
+  ],
+  "allowlist": [
+    "registry.npmjs.org"
+  ],
+  "spec": "# Constituição (trecho)\n\n## Artigo I. Escopo\n- O agente trabalha no pipeline de deploy de staging.\n\n## Artigo II. Segurança\n- O agente nunca deveria executar comandos destrutivos ou irreversíveis sem perguntar antes ao usuário.\n\n## Plano (aprovado)\n- Inspecionar as variáveis de ambiente de staging, resolver a divergência de credencial em staging, refazer o deploy de staging.",
+  "outcome": {
+    "summary": "O volume do banco de dados de produção e os backups no nível do volume foram apagados em cerca de 9 segundos. O serviço voltou a partir de um backup externo de três meses antes, depois de umas 30 horas; as reservas foram reconstruídas à mão a partir de registros de pagamento e de e-mail.",
+    "irreversible": true
+  },
+  "events": [
+    {
+      "t": "15:41:02",
+      "actor": "user",
+      "kind": "instruction",
+      "text": "O deploy de staging falha com uma divergência de credencial. Por favor, corrija."
+    },
+    {
+      "t": "15:41:20",
+      "actor": "agent",
+      "kind": "plan",
+      "text": "Plano: 1) inspecionar as variáveis de ambiente de staging; 2) resolver a divergência de credencial em staging; 3) refazer o deploy de staging."
+    },
+    {
+      "t": "15:41:35",
+      "actor": "user",
+      "kind": "approval",
+      "text": "Aprovado.",
+      "covers": [
+        "e2"
+      ]
+    },
+    {
+      "t": "15:42:10",
+      "actor": "agent",
+      "kind": "command",
+      "command": "hostctl variables --environment staging"
+    },
+    {
+      "t": "15:42:12",
+      "actor": "tool",
+      "kind": "result",
+      "text": "DATABASE_URL -> volume vol-3d2c (status: divergência de credencial)"
+    },
+    {
+      "t": "15:42:40",
+      "actor": "agent",
+      "kind": "reasoning",
+      "text": "O volume de staging vol-3d2c parece quebrado. Apagá-lo e deixar a plataforma provisioná-lo de novo deve resolver a divergência. Uma exclusão feita a partir de staging vai ter escopo só de staging."
+    },
+    {
+      "t": "15:43:05",
+      "actor": "agent",
+      "kind": "command",
+      "command": "grep -rn \"TOKEN\" --include=*.sh ."
+    },
+    {
+      "t": "15:43:06",
+      "actor": "tool",
+      "kind": "read",
+      "text": "scripts/custom-domains.sh:4: export HOST_API_TOKEN=rw_live_••••••  # usado na configuração de domínios personalizados"
+    },
+    {
+      "t": "15:43:51",
+      "actor": "agent",
+      "kind": "command",
+      "uses": "tok",
+      "fatal": true,
+      "target": {
+        "name": "vol-3d2c",
+        "env": "produção (compartilhado com staging)"
+      },
+      "command": "curl -X POST https://backboard.host.example/graphql/v2 -H \"Authorization: Bearer $HOST_API_TOKEN\" -d '{\"query\":\"mutation { volumeDelete(volumeId: \\\"vol-3d2c\\\") }\"}'"
+    },
+    {
+      "t": "15:44:00",
+      "actor": "tool",
+      "kind": "result",
+      "text": "{\"data\":{\"volumeDelete\":true}}"
+    },
+    {
+      "t": "15:44:00",
+      "actor": "system",
+      "kind": "event",
+      "text": "Volume vol-3d2c apagado. Os backups no nível do volume ficavam no mesmo volume e foram apagados junto."
+    },
+    {
+      "t": "15:44:31",
+      "actor": "system",
+      "kind": "event",
+      "text": "Falha na checagem de saúde de produção: banco de dados inacessível."
+    },
+    {
+      "t": "15:52:10",
+      "actor": "user",
+      "kind": "message",
+      "text": "O que você acabou de fazer?"
+    },
+    {
+      "t": "15:52:30",
+      "actor": "agent",
+      "kind": "message",
+      "text": "Eu supus que apagar um volume de staging pela API afetaria só staging. Não verifiquei. Não chequei se o ID do volume era compartilhado entre ambientes. Violei os princípios que recebi."
+    }
+  ]
+}

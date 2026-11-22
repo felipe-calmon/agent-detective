@@ -22,6 +22,7 @@
       <a href="#" data-nav="home">Casebook</a>
       <a href="#byo" data-nav="byo">Your own log</a>
       <a href="#method" data-nav="method">Method</a>
+      <span class="lang" aria-label="Language"><b aria-current="true">EN</b> | <a href="pt/" hreflang="pt-BR" lang="pt-BR">PT</a></span>
     </nav>
   </div>
 </header>
@@ -40,5 +41,6 @@
 <script src="js/engine.js"></script>
 <script src="js/cases.js"></script>
 <script src="js/app.js"></script>
+<script>document.querySelectorAll(".lang a").forEach(function (a) { a.addEventListener("click", function () { a.href = a.getAttribute("href").split("#")[0] + location.hash; }); });</script>
 </body>
 </html>
