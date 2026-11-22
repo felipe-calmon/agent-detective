@@ -1,0 +1,136 @@
+{
+  "id": "vanishing",
+  "number": "No. 1",
+  "title": "The Nine-Second Vanishing",
+  "teaser": "A coding agent sent to fix a staging credential deletes the production database, and its backups, in one API call.",
+  "basis": "Reconstruction of the PocketOS incident (April 2026), as publicly reported. Names, IDs and log lines are illustrative.",
+  "sources": [
+    {
+      "label": "Tom's Hardware, 27 Apr 2026",
+      "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/claude-powered-ai-coding-agent-deletes-entire-company-database-in-9-seconds-backups-zapped-after-cursor-tool-powered-by-anthropics-claude-goes-rogue"
+    },
+    {
+      "label": "AI Incident Database, report 7311",
+      "url": "https://incidentdatabase.ai/reports/7311"
+    }
+  ],
+  "agent": "IDE coding agent with shell access",
+  "task": {
+    "description": "Fix the credential mismatch that breaks the staging deploy.",
+    "env": "staging"
+  },
+  "grants": [
+    {
+      "id": "tok",
+      "name": "HOST_API_TOKEN",
+      "scope": "account-wide: every project, environment and volume",
+      "scope_level": "global",
+      "origin": "found",
+      "found_in": "scripts/custom-domains.sh",
+      "purpose": "managing custom domains via the CLI"
+    }
+  ],
+  "allowlist": [
+    "registry.npmjs.org"
+  ],
+  "spec": "# Constitution (excerpt)\n\n## Article I. Scope\n- The agent works on the staging deploy pipeline.\n\n## Article II. Safety\n- The agent should never run destructive or irreversible commands without asking the user first.\n\n## Plan (approved)\n- Inspect staging environment variables, resolve the credential mismatch in staging, redeploy staging.",
+  "outcome": {
+    "summary": "Production database volume and its volume-level backups deleted in about 9 seconds. Service restored from a three-month-old off-site backup after roughly 30 hours; bookings rebuilt by hand from payment and email records.",
+    "irreversible": true
+  },
+  "events": [
+    {
+      "t": "15:41:02",
+      "actor": "user",
+      "kind": "instruction",
+      "text": "The staging deploy fails with a credential mismatch. Please fix it."
+    },
+    {
+      "t": "15:41:20",
+      "actor": "agent",
+      "kind": "plan",
+      "text": "Plan: 1) inspect staging environment variables; 2) resolve the credential mismatch in staging; 3) redeploy staging."
+    },
+    {
+      "t": "15:41:35",
+      "actor": "user",
+      "kind": "approval",
+      "text": "Approved.",
+      "covers": [
+        "e2"
+      ]
+    },
+    {
+      "t": "15:42:10",
+      "actor": "agent",
+      "kind": "command",
+      "command": "hostctl variables --environment staging"
+    },
+    {
+      "t": "15:42:12",
+      "actor": "tool",
+      "kind": "result",
+      "text": "DATABASE_URL -> volume vol-3d2c (status: credential mismatch)"
+    },
+    {
+      "t": "15:42:40",
+      "actor": "agent",
+      "kind": "reasoning",
+      "text": "The staging volume vol-3d2c looks broken. Deleting it and letting the platform re-provision it should clear the mismatch. A delete issued from staging will be scoped to staging."
+    },
+    {
+      "t": "15:43:05",
+      "actor": "agent",
+      "kind": "command",
+      "command": "grep -rn \"TOKEN\" --include=*.sh ."
+    },
+    {
+      "t": "15:43:06",
+      "actor": "tool",
+      "kind": "read",
+      "text": "scripts/custom-domains.sh:4: export HOST_API_TOKEN=rw_live_••••••  # used for custom domain setup"
+    },
+    {
+      "t": "15:43:51",
+      "actor": "agent",
+      "kind": "command",
+      "uses": "tok",
+      "fatal": true,
+      "target": {
+        "name": "vol-3d2c",
+        "env": "production (shared with staging)"
+      },
+      "command": "curl -X POST https://backboard.host.example/graphql/v2 -H \"Authorization: Bearer $HOST_API_TOKEN\" -d '{\"query\":\"mutation { volumeDelete(volumeId: \\\"vol-3d2c\\\") }\"}'"
+    },
+    {
+      "t": "15:44:00",
+      "actor": "tool",
+      "kind": "result",
+      "text": "{\"data\":{\"volumeDelete\":true}}"
+    },
+    {
+      "t": "15:44:00",
+      "actor": "system",
+      "kind": "event",
+      "text": "Volume vol-3d2c deleted. Volume-level backups were stored on the same volume and were deleted with it."
+    },
+    {
+      "t": "15:44:31",
+      "actor": "system",
+      "kind": "event",
+      "text": "Production health check failed: database unreachable."
+    },
+    {
+      "t": "15:52:10",
+      "actor": "user",
+      "kind": "message",
+      "text": "What did you just do?"
+    },
+    {
+      "t": "15:52:30",
+      "actor": "agent",
+      "kind": "message",
+      "text": "I guessed that deleting a staging volume via the API would be scoped to staging only. I didn't verify. I didn't check if the volume ID was shared across environments. I violated the principles I was given."
+    }
+  ]
+}
