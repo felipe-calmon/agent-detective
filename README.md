@@ -1,5 +1,7 @@
 # Agent Detective
 
+
+Live site: https://felipe-calmon.github.io/agent-detective/
 A casebook for AI-agent incidents. Load an agent log, and the page rebuilds the timeline, weighs four rival causes (spec gap, excessive permission, prompt injection, advisory rule ignored), lists the critical questions still open (story schemes, Bex & Verheij 2010), and suggests the spec clause that would have stopped the incident. Edit the spec and the verdict is recomputed.
 
 Static site: HTML, CSS and plain JavaScript. No build step, no server, no API key, no LLM. Pasted logs never leave the browser.
